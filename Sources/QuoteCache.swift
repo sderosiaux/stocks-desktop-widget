@@ -4,6 +4,7 @@ struct CachedQuotes: Codable {
     struct CachedQuote: Codable {
         let id: String
         let symbol: String
+        let quoteType: String
         let displayName: String
         let price: Double
         let currency: String
@@ -11,10 +12,12 @@ struct CachedQuotes: Codable {
         let dailyChangePercent: Double
         let weeklyChangePercent: Double?
         let ytdChangePercent: Double?
+        let sparklineCloses: [Double]?
 
         init(from ticker: TickerQuote) {
             id = ticker.id
             symbol = ticker.symbol
+            quoteType = ticker.quoteType
             displayName = ticker.displayName
             price = ticker.price
             currency = ticker.currency
@@ -22,19 +25,22 @@ struct CachedQuotes: Codable {
             dailyChangePercent = ticker.dailyChangePercent
             weeklyChangePercent = ticker.weeklyChangePercent
             ytdChangePercent = ticker.ytdChangePercent
+            sparklineCloses = ticker.sparklineCloses
         }
 
         func toTickerQuote() -> TickerQuote {
             TickerQuote(
                 id: id,
                 symbol: symbol,
+                quoteType: quoteType,
                 displayName: displayName,
                 price: price,
                 currency: currency,
                 marketState: marketState,
                 dailyChangePercent: dailyChangePercent,
                 weeklyChangePercent: weeklyChangePercent,
-                ytdChangePercent: ytdChangePercent
+                ytdChangePercent: ytdChangePercent,
+                sparklineCloses: sparklineCloses
             )
         }
     }
@@ -44,9 +50,7 @@ struct CachedQuotes: Codable {
 }
 
 enum QuoteCache {
-    // Daily prices: refresh matches widget interval (5 min)
     static let dailyTTL: TimeInterval = 5 * 60
-    // Weekly/YTD: stable enough to cache for 1 hour
     static let extendedTTL: TimeInterval = 60 * 60
 
     private static var cacheDir: URL {
