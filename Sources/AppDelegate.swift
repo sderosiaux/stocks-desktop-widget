@@ -1,15 +1,20 @@
 import AppKit
+import Combine
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
     let store = WidgetStore()
+    private var statusItem: NSStatusItem?
+    private var cancellable: AnyCancellable?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         window = makeWindow()
         window.orderFront(nil)
         setupEditMenu()
+        setupStatusBar()
+        store.startRefreshLoop()
     }
 
     private func makeWindow() -> NSWindow {
@@ -61,6 +66,46 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ])
         return view
     }
+
+    // MARK: - Menu bar
+
+    private func setupStatusBar() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        guard let button = statusItem?.button else { return }
+        button.action = #selector(toggleWindow)
+        button.target = self
+        button.title = "◆"
+        cancellable = store.$tickers
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] tickers in
+                guard let button = self?.statusItem?.button else { return }
+                self?.updateStatusButton(button, tickers: tickers)
+            }
+    }
+
+    private func updateStatusButton(_ button: NSStatusBarButton, tickers: [TickerQuote]) {
+        guard !tickers.isEmpty else { button.title = "◆"; return }
+        let avg = tickers.map { $0.dailyChangePercent }.reduce(0, +) / Double(tickers.count)
+        let sign = avg >= 0 ? "▲" : "▼"
+        let color: NSColor = avg >= 0 ? .systemGreen : .systemRed
+        let text = String(format: "%@ %.1f%%", sign, abs(avg))
+        let attrs: [NSAttributedString.Key: Any] = [
+            .foregroundColor: color,
+            .font: NSFont.monospacedSystemFont(ofSize: 11, weight: .medium)
+        ]
+        button.attributedTitle = NSAttributedString(string: text, attributes: attrs)
+    }
+
+    @objc private func toggleWindow() {
+        if window.isVisible {
+            window.orderOut(nil)
+        } else {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+        }
+    }
+
+    // MARK: - Edit menu
 
     private func setupEditMenu() {
         let editMenu = NSMenu(title: "Edit")
