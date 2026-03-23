@@ -100,9 +100,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let avg = tickers.map { $0.dailyChangePercent }.reduce(0, +) / Double(tickers.count)
-        let sign = avg >= 0 ? "▲" : "▼"
         let color: NSColor = avg >= 0 ? .systemGreen : .systemRed
-        let text = String(format: "%@ %.1f%%", sign, abs(avg))
+        let text = String(format: "%+.1f%%", avg)
         result.append(NSAttributedString(string: text, attributes: [
             .foregroundColor: color,
             .font: NSFont.monospacedSystemFont(ofSize: 11, weight: .medium)
