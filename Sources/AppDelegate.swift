@@ -84,16 +84,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func updateStatusButton(_ button: NSStatusBarButton, tickers: [TickerQuote]) {
-        guard !tickers.isEmpty else { button.title = "◆"; return }
+        let result = NSMutableAttributedString()
+        result.append(NSAttributedString(string: "Stocks ", attributes: [
+            .foregroundColor: NSColor.labelColor,
+            .font: NSFont.systemFont(ofSize: 11, weight: .medium)
+        ]))
+
+        guard !tickers.isEmpty else {
+            result.append(NSAttributedString(string: "◆", attributes: [
+                .foregroundColor: NSColor.secondaryLabelColor,
+                .font: NSFont.systemFont(ofSize: 11, weight: .medium)
+            ]))
+            button.attributedTitle = result
+            return
+        }
+
         let avg = tickers.map { $0.dailyChangePercent }.reduce(0, +) / Double(tickers.count)
         let sign = avg >= 0 ? "▲" : "▼"
         let color: NSColor = avg >= 0 ? .systemGreen : .systemRed
         let text = String(format: "%@ %.1f%%", sign, abs(avg))
-        let attrs: [NSAttributedString.Key: Any] = [
+        result.append(NSAttributedString(string: text, attributes: [
             .foregroundColor: color,
             .font: NSFont.monospacedSystemFont(ofSize: 11, weight: .medium)
-        ]
-        button.attributedTitle = NSAttributedString(string: text, attributes: attrs)
+        ]))
+        button.attributedTitle = result
     }
 
     @objc private func toggleWindow() {
